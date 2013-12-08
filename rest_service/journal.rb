@@ -26,13 +26,21 @@ def load_sample_data()
 end
 load_sample_data()
 
+before do
+	logger.info "Received request(key:#{params[:key]})"
+	unless params[:key] =~ /^BRANDON$/
+		logger.warn "UNAUTHORIZED USER MADE REQUEST TO API (key:#{params[:key]})"
+		body haml "%h1 UNAUTHORIZED"
+		halt 401
+	end		
+end
 
-get '/' do	
+get "/" do	
 	@num_entries = Entry.count
 	haml :index
 end
 
-get '/entries.?:format?' do |format|
+get "/entries.?:format?" do |format|
 	@entries = Entry.all
 
 	case format.upcase
@@ -43,7 +51,7 @@ get '/entries.?:format?' do |format|
 	haml :entries
 end
 
-get '/entries/?:entry_id?.?:format?' do |entry_id, format|
+get "/entries/?:entry_id?.?:format?" do |entry_id, format|
 	if entry_id.nil?
 		redirect to( '/entries' )
 	end
@@ -63,17 +71,17 @@ get '/entries/?:entry_id?.?:format?' do |entry_id, format|
 	haml :entry
 end
 
-post '/entries' do
+post "/entries" do
 	request.body.rewind		# in case it's been read already somewhere else
 
-	new_id = Entry.createFromJson( request.body.read ).id
+	new_entry = Entry.createFromJson( request.body.read )
 
-	if new_id.nil?
+	if new_entry.nil? || new_entry.id.nil?
 		status 400
 		return haml "%h1 BAD REQUEST"
 	end
 
-	redirect to( "/entries/#{new_id}" )
+	return new_entry.to_json
 end
 
 

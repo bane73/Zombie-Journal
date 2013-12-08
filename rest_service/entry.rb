@@ -13,7 +13,7 @@ class Entry
   def self.createFromJson( jsonString )
   	data = JSON.parse( jsonString )
 
-  	entry = Entry.create(
+  	Entry.create(
   		:subject => data['subject'],
   		:body => data['body']
 	)
