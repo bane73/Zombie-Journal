@@ -13,75 +13,70 @@ require_relative 'entry'
 DataMapper.finalize
 Entry.auto_migrate!
 
-# JSON parsing
-require 'json'
 
-# MySQL database
-require 'mysql2'
+def load_sample_data() 
+	Entry.create(
+		:subject => "1st Entry",
+		:body => "This is the 1st journal entry."
+	)
+	Entry.create(
+		:subject => "2nd Entry",
+		:body => "This is another sample entry."
+	)
+end
+load_sample_data()
 
 
 get '/' do	
-	@entry = Entry.create(
-		:subject => "My NEW entry!",
-		:body => "This is it's body."
-	)
-
-	"Welcome to the Zombie Journal REST Service!"
+	@num_entries = Entry.count
+	haml :index
 end
 
-get '/entries' do
-	"All journal entries..."
+get '/entries.?:format?' do |format|
+	@entries = Entry.all
+
+	case format.upcase
+	when "JSON"
+		return @entries.to_json
+	end unless format.nil?
+
+	haml :entries
 end
 
-get '/entries/?:entry_id?' do |entry_id|
+get '/entries/?:entry_id?.?:format?' do |entry_id, format|
 	if entry_id.nil?
 		redirect to( '/entries' )
 	end
 
-=begin
-	client = Mysql2::Client.new( :host => "localhost", :username => "root", :database => "ruby" )
-	results = client.query( "select * from entries where id='#{entry_id}'")
-	client.close
+	@entry = Entry.get( entry_id )
 
-	entry = nil
-	results.each { |row| entry = row; break; }
-	id = entry['id']
-	subject = entry['subject']
-	body = entry['body']
-	timestamp = entry['timestamp']
+	if @entry.nil?
+		status 404
+		return haml "%h1 NOT FOUND"
+	end
 
+	case format.upcase
+	when "JSON"
+		return @entry.to_json
+	end unless format.nil?
 
-	output = "<html><body>"
-	output = "<h1>Journal entry (id:#{entry_id})</h1>"
-	output << "<p>ID: #{id}</p>"
-	output << "<p>SUBJECT: #{subject}</p>"
-	output << "<p>BODY: #{body}</p>"
-	output << "<p>TIMESTAMP: #{timestamp}</p>"	
-	output << "</body></html>"
-=end
-
-	entry = Entry.get( entry_id )
-	output = "<html><body>"
-	output = "<h1>Journal entry (id:#{entry_id})</h1>"
-	output << "<p>ID: #{entry.id}</p>"
-	output << "<p>SUBJECT: #{entry.subject}</p>"
-	output << "<p>BODY: #{entry.body}</p>"
-	output << "<p>CREATED AT: #{entry.created_at}</p>"	
-	output << "</body></html>"
-
+	haml :entry
 end
 
 post '/entries' do
 	request.body.rewind		# in case it's been read already somewhere else
-	data = JSON.parse request.body.read
 
-client = Mysql2::Client.new( :host => "localhost", :username => "root", :database => "ruby" )
-results = client.query('select * from entries')
-results.each { |row| puts row['subject'] }
-client.close
+	new_id = Entry.createFromJson( request.body.read ).id
 
-	"I was in a #{data['mood']} mood when I wrote: '#{data['body']}'."
+	if new_id.nil?
+		status 400
+		return haml "%h1 BAD REQUEST"
+	end
+
+	redirect to( "/entries/#{new_id}" )
 end
+
+
 
 
 

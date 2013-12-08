@@ -1,0 +1,24 @@
+%html
+	
+	%body
+
+		%h1 Welcome to the Zombie Journal REST Service!
+
+		%p There are #{@num_entries} Entries in the system.
+
+		%p Available methods:
+
+		%ul
+			%li GET /
+			%li
+				%div
+					%div GET /entries
+					%div GET /entries.json	
+			%li
+				%div
+					%div GET /entries/1
+					%div GET /entries/1.json
+			%li POST /entries {"subject":"YAJE", "body":"Yet Another Journal Entry"}
+
+
+

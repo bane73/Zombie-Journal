@@ -1,0 +1,11 @@
+%html
+
+	%body
+
+		%h1 All #{@entries.size} journal entries
+
+		%ul
+			- @entries. each do |entry|
+				%li 
+					(id:#{entry.id}) #{entry.subject} on #{entry.created_at}
+					%p #{entry.body}
